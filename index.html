@@ -173,6 +173,40 @@
     }
     .skill-pill:hover { border-color: var(--accent); color: #a78bfa; }
 
+    /* ─── CARD FIELD CHOOSER ─── */
+    .field-chooser-wrapper { position: relative; display: inline-flex; align-items: center; }
+    .field-chooser-btn { background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 4px; border-radius: 6px; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px;}
+    .field-chooser-btn:hover { color: var(--text); background: var(--hover); }
+    .field-chooser-panel {
+      position: absolute; right: 0; top: 100%; margin-top: 8px; width: 200px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 100;
+      display: none; flex-direction: column; gap: 4px;
+    }
+    .field-chooser-panel.open { display: flex; animation: fadeUp 0.2s ease; }
+    .field-chooser-item {
+      display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 6px 8px;
+      border-radius: 6px; cursor: pointer; color: var(--text);
+    }
+    .field-chooser-item:hover { background: var(--hover); }
+    .field-chooser-item input { accent-color: var(--accent); cursor: pointer; }
+
+    /* ─── EDIT MODE ─── */
+    .dp-edit-btn { background: none; border: none; font-size: 15px; cursor: pointer; color: var(--muted); padding: 4px; border-radius: 6px; transition: 0.2s; margin-left: 8px; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; }
+    .dp-edit-btn:hover { color: var(--text); background: var(--hover); }
+    .dp-edit-btn.active { color: var(--accent); background: rgba(109,40,217,0.15); }
+    .dp-edit-input, .dp-edit-textarea, .dp-edit-select {
+      width: 100%; background: rgba(0,0,0,0.1); border: 1px solid var(--border2); color: var(--text);
+      font-size: 13px; padding: 6px 8px; border-radius: 6px; outline: none; font-family: inherit; transition: border-color 0.2s;
+    }
+    .dp-edit-select { background: var(--surface); }
+    .dp-edit-input:focus, .dp-edit-textarea:focus, .dp-edit-select:focus { border-color: var(--accent); background: rgba(0,0,0,0.2); }
+    .dp-edit-textarea { resize: vertical; min-height: 50px; }
+    .dp-save-bar {
+      position: sticky; bottom: 0; background: var(--card); padding: 16px 24px; border-top: 1px solid var(--border);
+      display: flex; justify-content: flex-end; align-items: center; gap: 12px; z-index: 10; margin: 0 -24px -24px -24px;
+    }
+
     /* ─── EMPTY / ONBOARD ─── */
     .onboard {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -748,7 +782,10 @@
         `;
       })()}
 
-      <div class="dash-section-title">Your Contacts</div>
+      <div class="dash-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>All Contacts</span>
+        ${buildFieldChooserHTML('chooser-dash')}
+      </div>
       <div class="people-grid">
         ${people.slice(0,6).map(renderPersonCard).join('')}
       </div>
@@ -769,30 +806,121 @@
       el.innerHTML = '<div class="empty-msg">No contacts found.</div>';
       return;
     }
-    el.innerHTML = `<div class="people-grid">${people.map(renderPersonCard).join('')}</div>`;
+    el.innerHTML = `
+      <div style="display:flex; justify-content:flex-end; margin-bottom:16px;">
+        ${buildFieldChooserHTML('chooser-people')}
+      </div>
+      <div class="people-grid">${people.map(renderPersonCard).join('')}</div>
+    `;
     attachCardListeners();
+  }
+
+  // ─── CARD FIELD CHOOSER ───
+  let cardFields = JSON.parse(localStorage.getItem('crm_card_fields')) || ['skills', 'phone'];
+
+  function saveCardFields() {
+    localStorage.setItem('crm_card_fields', JSON.stringify(cardFields));
+    if (currentView === 'dashboard') renderDashboard();
+    else if (currentView === 'people') renderPeople();
+  }
+
+  function toggleFieldChooser(id) {
+    const p = document.getElementById(id);
+    if (!p) return;
+    p.classList.toggle('open');
+  }
+
+  function onFieldChecked(key, checkbox) {
+    if (checkbox.checked) {
+      if (cardFields.length >= 2) {
+        const removed = cardFields.shift();
+        const p = checkbox.closest('.field-chooser-panel');
+        if (p) {
+          const oldCb = p.querySelector(`input[value="${removed}"]`);
+          if (oldCb) oldCb.checked = false;
+        }
+      }
+      cardFields.push(key);
+    } else {
+      cardFields = cardFields.filter(x => x !== key);
+    }
+    saveCardFields();
+    document.querySelectorAll('.field-chooser-panel input').forEach(cb => {
+      cb.checked = cardFields.includes(cb.value);
+    });
+  }
+
+  function buildFieldChooserHTML(panelId) {
+    const fields = [
+      {k: 'skills', l: 'Skills'}, {k: 'phone', l: 'Phone'}, {k: 'location', l: 'Location'},
+      {k: 'email', l: 'Email'}, {k: 'company', l: 'Company'}, {k: 'languages', l: 'Languages'},
+      {k: 'telegram', l: 'Telegram'}, {k: 'discord', l: 'Discord'}, {k: 'topics', l: 'Topics'},
+      {k: 'projects', l: 'Projects'}, {k: 'cadence', l: 'Cadence'}, {k: 'where_met', l: 'Where Met'}
+    ];
+    let items = fields.map(f => {
+      const ch = cardFields.includes(f.k) ? 'checked' : '';
+      return `<label class="field-chooser-item">
+        <input type="checkbox" value="${f.k}" ${ch} onchange="onFieldChecked('${f.k}', this)">
+        ${f.l}
+      </label>`;
+    }).join('');
+    
+    return `
+      <div class="field-chooser-wrapper" id="wrap-${panelId}">
+        <button class="field-chooser-btn" onclick="toggleFieldChooser('${panelId}')" title="Customize Card Fields">⚙️</button>
+        <div class="field-chooser-panel" id="${panelId}">
+          <div style="font-size:11px; color:var(--muted); padding:4px; text-transform:uppercase; letter-spacing:0.05em; font-weight:600">Show on cards (pick 2)</div>
+          ${items}
+        </div>
+      </div>
+    `;
   }
 
   function renderPersonCard(p) {
     const initials = (p['Full Name'] || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
     const role = p['Cybersecurity Role'] || p['Current Title'] || '';
-    const skills = personSkills(p).slice(0, 3);
-    const phone = p['Phone'] || '';
-    const loc = p['Location'] || '';
-    const handle = p['Handle'] || '';
 
-    const skillTags = skills.map(s => {
-      const sk = db.skills.find(sk2 => sk2['Skill / Specialization'] === s);
-      const cat = sk ? sk.Category : '';
-      let cls = '';
-      if (cat.includes('Offensive')) cls = '';
-      else if (cat.includes('AI')) cls = 'amber';
-      else if (cat.includes('Full Stack') || cat.includes('Dev')) cls = 'blue';
-      else if (cat.includes('Defensive')) cls = 'green';
-      return `<span class="skill-tag ${cls}">${s}</span>`;
-    }).join('');
+    let dynHtml = cardFields.map(k => {
+      if (k === 'skills') {
+        const skills = personSkills(p).slice(0, 3);
+        if (!skills.length) return '';
+        const skillTags = skills.map(s => {
+          const sk = (db.skills || []).find(sk2 => sk2['Skill / Specialization'] === s);
+          const cat = sk ? sk.Category : 'Other';
+          const col = catColor(cat);
+          return `<span class="skill-tag" style="background:${col}15; color:${col}; border-color:${col}33">${s}</span>`;
+        }).join('');
+        return `<div class="person-skills" style="margin-bottom:8px">${skillTags}</div>`;
+      }
+      
+      let val = '';
+      let label = '';
+      if (k === 'phone') { val = getArray(p, 'Phones')[0] || p['Phone']; label = 'Phone'; }
+      else if (k === 'location') { val = p['Location']; label = 'Loc'; }
+      else if (k === 'email') { val = getArray(p, 'Emails')[0] || p['Email']; label = 'Email'; }
+      else if (k === 'company') { val = p['Current Company']; label = 'Org'; }
+      else if (k === 'languages') { val = getArray(p, 'Languages').join(', '); label = 'Lang'; }
+      else if (k === 'telegram') { val = getArray(p, 'Telegrams')[0] || p['Telegram']; label = 'TG'; }
+      else if (k === 'discord') { val = getArray(p, 'Discords')[0] || p['Discord']; label = 'Discord'; }
+      else if (k === 'topics') { val = getArray(p, 'Topics').join(', '); label = 'Topics'; }
+      else if (k === 'projects') { val = getArray(p, 'Projects').join(', '); label = 'Projects'; }
+      else if (k === 'cadence') {
+        const d = nextContactDate(p);
+        val = d ? d.toLocaleDateString() : '';
+        label = 'Next';
+      }
+      else if (k === 'where_met') { val = p['Where Met']; label = 'Met'; }
+      
+      if (!val) return '';
+      return `<div style="display:flex; gap:6px; font-size:11.5px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis"><span style="color:var(--muted); min-width:35px">${label}:</span> <span style="overflow:hidden; text-overflow:ellipsis">${val}</span></div>`;
+    }).filter(Boolean);
 
-    const meta = [phone, loc, handle].filter(Boolean).slice(0,2).join(' · ');
+    let finalFieldsHtml = '';
+    if (dynHtml.length) {
+      finalFieldsHtml = `<div class="person-meta" style="flex-direction:column; gap:4px; align-items:flex-start; margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
+        ${dynHtml.join('')}
+      </div>`;
+    }
 
     const hc = healthClass(p);
     return `
@@ -805,8 +933,7 @@
             <div class="person-role">${role}</div>
           </div>
         </div>
-        ${skillTags ? `<div class="person-skills" style="margin-top:10px">${skillTags}</div>` : ''}
-        ${meta ? `<div class="person-meta">${meta}</div>` : ''}
+        ${finalFieldsHtml}
       </div>`;
   }
 
@@ -1185,7 +1312,13 @@
 
   // Close detail panel on overlay click
   document.getElementById('modal-overlay').addEventListener('click', e => {
-    if (e.target === document.getElementById('modal-overlay')) closeModal();
+    if (e.target.id === 'modal-overlay') closeModal();
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.field-chooser-wrapper')) {
+      document.querySelectorAll('.field-chooser-panel.open').forEach(p => p.classList.remove('open'));
+    }
   });
 
   // Initial: hide search on dashboard
