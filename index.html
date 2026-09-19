@@ -541,6 +541,7 @@
         <div class="detail-role" id="dp-role"></div>
       </div>
       <button class="modal-close" id="btn-detail-share" style="margin-right:8px;font-size:16px;" title="Copy Contact">📋</button>
+      <button class="modal-close" id="btn-detail-edit" style="margin-right:8px;font-size:16px;" title="Edit Contact">✏️</button>
       <button class="modal-close" id="btn-detail-close">✕</button>
     </div>
     <div class="detail-body" id="dp-body"></div>
@@ -706,6 +707,122 @@
     if (view === 'dashboard') renderDashboard();
     else if (view === 'people') renderPeople();
     else if (view === 'skills') renderSkills();
+  }
+
+  // ─── EDIT MODE ───
+  let editingPersonId = null;
+
+  function toggleEditMode(p) {
+    if (editingPersonId === p['Person ID']) {
+      editingPersonId = null;
+      openDetailPanel(p);
+    } else {
+      editingPersonId = p['Person ID'];
+      renderDetailEdit(p);
+    }
+  }
+
+  function renderDetailEdit(p) {
+    document.getElementById('btn-detail-edit').classList.add('active');
+    const sList = personSkills(p);
+    
+    // Checkboxes for skills
+    let skillHtml = '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
+    db.skills.forEach(sk => {
+      const nm = sk['Skill / Specialization'];
+      const ch = sList.includes(nm) ? 'checked' : '';
+      skillHtml += `<label style="font-size:12px; display:flex; align-items:center; gap:4px;"><input type="checkbox" class="edit-skill-cb" value="${nm}" ${ch}> ${nm}</label>`;
+    });
+    skillHtml += '</div>';
+
+    const formatArray = (arr) => arr.length ? arr.join(', ') : '';
+    
+    const rows = [
+      {k: 'Role / Title', key: 'Cybersecurity Role', val: p['Cybersecurity Role'] || p['Current Title'] || '', type: 'input'},
+      {k: 'Experience', key: 'Experience Level', val: p['Experience Level'] || '', type: 'select', opts: ['Junior','Mid','Senior','Lead','Expert']},
+      {k: 'Company', key: 'Current Company', val: p['Current Company'] || '', type: 'input'},
+      {k: 'Status', key: 'Status', val: p['Status'] || '', type: 'select', opts: ['Active','Passive','Lost Touch','VIP']},
+      {k: 'Phone(s)', key: 'Phones', val: formatArray(getArray(p, 'Phones')) || p['Phone'] || '', type: 'input'},
+      {k: 'Email(s)', key: 'Emails', val: formatArray(getArray(p, 'Emails')) || p['Email'] || '', type: 'input'},
+      {k: 'Location', key: 'Location', val: p['Location'] || '', type: 'input'},
+      {k: 'Languages', key: 'Languages', val: formatArray(getArray(p, 'Languages')), type: 'input'},
+      {k: 'Telegram(s)', key: 'Telegrams', val: formatArray(getArray(p, 'Telegrams')) || p['Telegram'] || '', type: 'input'},
+      {k: 'Discord(s)', key: 'Discords', val: formatArray(getArray(p, 'Discords')) || p['Discord'] || '', type: 'input'},
+      {k: 'LinkedIn', key: 'LinkedIn', val: p['LinkedIn'] || '', type: 'input'},
+      {k: 'GitHub', key: 'GitHub', val: p['GitHub'] || '', type: 'input'},
+      {k: 'Website', key: 'Website', val: p['Website'] || '', type: 'input'},
+      {k: 'Where Met', key: 'Where Met', val: p['Where Met'] || '', type: 'input'},
+      {k: 'Topics', key: 'Topics', val: formatArray(getArray(p, 'Topics')), type: 'input'},
+      {k: 'Projects', key: 'Projects', val: formatArray(getArray(p, 'Projects')), type: 'input'},
+      {k: 'Cadence', key: 'Cadence', val: p['Cadence'] || '0', type: 'select', opts: ['0','30','60','90','180','365']},
+      {k: 'Goals', key: 'Goals', val: p['Goals'] || '', type: 'textarea'},
+      {k: 'Interests', key: 'Interests', val: p['Interests'] || '', type: 'textarea'},
+      {k: 'Context', key: 'PersonalContext', val: p['PersonalContext'] || '', type: 'textarea'},
+      {k: 'Notes', key: 'Note', val: p['Note'] || p['Notes'] || '', type: 'textarea'}
+    ];
+
+    let bodyHtml = rows.map(r => {
+      let inputHtml = '';
+      const safeVal = r.val.replace(/"/g, '&quot;');
+      if (r.type === 'input') {
+        inputHtml = `<input type="text" class="dp-edit-input" data-key="${r.key}" value="${safeVal}">`;
+      } else if (r.type === 'textarea') {
+        inputHtml = `<textarea class="dp-edit-textarea" data-key="${r.key}">${safeVal}</textarea>`;
+      } else if (r.type === 'select') {
+        const opts = r.opts.map(o => `<option value="${o}" ${r.val===o?'selected':''}>${o==='0'?'None':o}</option>`).join('');
+        inputHtml = `<select class="dp-edit-select" data-key="${r.key}"><option value=""></option>${opts}</select>`;
+      }
+      return `
+        <div class="static-row">
+          <div class="static-row-label">${r.k}</div>
+          <div class="static-row-val">${inputHtml}</div>
+        </div>`;
+    }).join('');
+
+    bodyHtml += `
+      <div class="static-row" style="flex-direction:column; align-items:stretch;">
+        <div class="static-row-label" style="width:100%; margin-bottom:8px;">Skills</div>
+        <div class="static-row-val" style="width:100%; border:1px solid var(--border2); padding:8px; border-radius:6px; background:rgba(0,0,0,0.1)">
+          ${skillHtml}
+        </div>
+      </div>
+    `;
+    
+    bodyHtml += `
+      <div class="dp-save-bar">
+        <button class="btn" onclick="toggleEditMode(db.people.find(x=>x['Person ID']==='${editingPersonId}'))">Cancel</button>
+        <button class="btn btn-primary" onclick="saveDetailEdits('${p['Person ID']}')">Save Changes</button>
+      </div>
+    `;
+
+    document.getElementById('dp-body').innerHTML = bodyHtml;
+  }
+
+  function saveDetailEdits(id) {
+    const p = db.people.find(x => x['Person ID'] === id);
+    if (!p) return;
+
+    // Collect inputs
+    document.querySelectorAll('#dp-body .dp-edit-input, #dp-body .dp-edit-textarea, #dp-body .dp-edit-select').forEach(el => {
+      const k = el.dataset.key;
+      const v = el.value.trim();
+      
+      // Multi-value handling
+      if (['Phones','Emails','Languages','Telegrams','Discords','Topics','Projects'].includes(k)) {
+        p[k] = v ? v.split(',').map(x=>x.trim()).filter(Boolean) : [];
+      } else {
+        p[k] = v;
+      }
+    });
+
+    // Special fields
+    p['Specialization'] = Array.from(document.querySelectorAll('#dp-body .edit-skill-cb:checked')).map(cb => cb.value).join(', ');
+
+    saveFile();
+    editingPersonId = null;
+    openDetailPanel(p);
+    if (currentView === 'dashboard') renderDashboard();
+    else if (currentView === 'people') renderPeople();
   }
 
   // ─── DASHBOARD ───────────────────────────────────────────────────
@@ -963,6 +1080,12 @@
     document.getElementById('btn-detail-share').onclick = () => {
       navigator.clipboard.writeText(buildShareText(p)).then(() => showToast('Contact copied!'));
     };
+
+    editingPersonId = null;
+    document.getElementById('btn-detail-edit').onclick = () => {
+      toggleEditMode(p);
+    };
+    document.getElementById('btn-detail-edit').classList.remove('active');
 
     let cadenceText = '';
     if (p.Cadence && p.Cadence !== '0') {
