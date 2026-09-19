@@ -275,6 +275,26 @@
       font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: rgba(109,40,217,0.15); color: #a78bfa;
     }
 
+    /* ─── CRM v3 FEATURES ─── */
+    .dp-skill-pill { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; margin: 2px; border: 1px solid; }
+    .static-row { display: flex; padding: 10px 0; border-bottom: 1px solid var(--border2); align-items: flex-start; position: relative; }
+    .static-row:last-child { border-bottom: none; }
+    .static-row-label { width: 140px; flex-shrink: 0; color: var(--muted); font-size: 13px; font-weight: 500; padding-top: 2px; }
+    .static-row-val { flex: 1; font-size: 14px; min-width: 0; word-wrap: break-word; padding-right: 24px; }
+    .static-row-empty { color: var(--muted); opacity: 0.5; }
+    .copy-btn { 
+      opacity: 0; cursor: pointer; padding: 4px; color: var(--muted); font-size: 14px; border-radius: 4px; transition: 0.2s; position: absolute; right: 0; top: 8px;
+    }
+    .static-row:hover .copy-btn { opacity: 1; }
+    .copy-btn:hover { color: var(--text); background: var(--border); }
+    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 9999; }
+    #toast.show { opacity: 1; bottom: 30px; }
+    .skill-delete-btn { display: none; cursor: pointer; margin-left: 6px; font-size: 14px; line-height: 1; opacity: 0.7; }
+    .skill-delete-btn:hover { opacity: 1; }
+    .skill-pill:hover .skill-delete-btn { display: inline; }
+    .cat-rename-input { background: var(--surface); color: var(--text); border: 1px solid var(--border2); border-radius: 4px; font-size: 14px; font-weight: 700; padding: 2px 6px; outline: none; }
+    .drop-zone-active { background: rgba(255,255,255,0.05); border-radius: 8px; }
+
     /* ─── UTILS ─── */
     .hidden { display: none !important; }
     .empty-msg { text-align: center; color: var(--muted); font-size: 14px; padding: 40px; }
@@ -368,16 +388,47 @@
         </div>
         <div class="modal-row">
           <div class="form-group">
-            <label class="form-label">Phone / WhatsApp</label>
-            <input class="form-input" id="f-phone" placeholder="+212 6xx-xxx-xxx" />
+            <label class="form-label">Phone(s) (comma-separated)</label>
+            <input class="form-input" id="f-phones" placeholder="+212 xxx, +1 xxx" />
           </div>
           <div class="form-group">
-            <label class="form-label">Where We Met</label>
-            <input class="form-input" id="f-met" placeholder="e.g. CTF, Conference, Discord" />
+            <label class="form-label">Email(s) (comma-separated)</label>
+            <input class="form-input" id="f-emails" placeholder="a@a.com, b@b.com" />
           </div>
         </div>
         
         <div class="modal-row">
+          <div class="form-group">
+            <label class="form-label">Telegram(s) (comma-separated)</label>
+            <input class="form-input" id="f-telegrams" placeholder="@username, @other" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Discord(s) (comma-separated)</label>
+            <input class="form-input" id="f-discords" placeholder="user#1234, other" />
+          </div>
+        </div>
+
+        <div class="modal-row">
+          <div class="form-group">
+            <label class="form-label">Languages (comma-separated)</label>
+            <input class="form-input" id="f-languages" placeholder="English, Arabic, French" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Topics (comma-separated)</label>
+            <input class="form-input" id="f-topics" placeholder="AI, Crypto, Design" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Projects (comma-separated)</label>
+          <input class="form-input" id="f-projects" placeholder="Project A, Project B" />
+        </div>
+
+        <div class="modal-row">
+          <div class="form-group">
+            <label class="form-label">Where We Met</label>
+            <input class="form-input" id="f-met" placeholder="e.g. CTF, Conference, Discord" />
+          </div>
           <div class="form-group">
             <label class="form-label">Keep-in-Touch Cadence</label>
             <select class="form-select" id="f-cadence">
@@ -388,10 +439,6 @@
               <option value="180">Every 180 days</option>
               <option value="365">Every Year</option>
             </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Handle / Username</label>
-            <input class="form-input" id="f-handle" placeholder="@username" />
           </div>
         </div>
 
@@ -455,6 +502,7 @@
         <div class="detail-name" id="dp-name"></div>
         <div class="detail-role" id="dp-role"></div>
       </div>
+      <button class="modal-close" id="btn-detail-share" style="margin-right:8px;font-size:16px;" title="Copy Contact">📋</button>
       <button class="modal-close" id="btn-detail-close">✕</button>
     </div>
     <div class="detail-body" id="dp-body"></div>
@@ -480,12 +528,52 @@
   </div>
 
 
+  <div id="toast"></div>
+
   <script>
   // ─── STATE ─────────────────────────────────────────────────────
   let db = null;
   let fileHandle = null;
   let currentView = 'dashboard';
   let searchQuery = '';
+
+  // ─── CRM v3 HELPERS ─────────────────────────────────────────────
+  function getArray(p, field) {
+    if (!p[field]) return [];
+    if (Array.isArray(p[field])) return p[field].filter(Boolean);
+    return p[field].toString().split(',').map(s => s.trim()).filter(Boolean);
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1500);
+  }
+
+  function copyField(val) {
+    if (!val) return;
+    navigator.clipboard.writeText(val).then(() => showToast('Copied!'));
+  }
+
+  function buildShareText(p) {
+    let text = `Name: ${p['Full Name'] || '—'}\n`;
+    if(p['Cybersecurity Role']) text += `Role: ${p['Cybersecurity Role']}\n`;
+    
+    const phones = getArray(p, 'Phones');
+    if(phones.length) text += `Phone: ${phones.join(', ')}\n`;
+    else if(p['Phone']) text += `Phone: ${p['Phone']}\n`;
+
+    const emails = getArray(p, 'Emails');
+    if(emails.length) text += `Email: ${emails.join(', ')}\n`;
+    else if(p['Email']) text += `Email: ${p['Email']}\n`;
+
+    if(p['LinkedIn']) text += `LinkedIn: ${p['LinkedIn']}\n`;
+    if(p['GitHub']) text += `GitHub: ${p['GitHub']}\n`;
+    if(p['Website']) text += `Website: ${p['Website']}\n`;
+    
+    return text.trim();
+  }
 
   // ─── CATEGORY COLORS ───────────────────────────────────────────
   const catColors = {
@@ -740,6 +828,11 @@
     document.getElementById('dp-name').textContent = p['Full Name'] || '—';
     document.getElementById('dp-role').textContent = p['Cybersecurity Role'] || p['Current Title'] || '';
 
+    // setup the share button
+    document.getElementById('btn-detail-share').onclick = () => {
+      navigator.clipboard.writeText(buildShareText(p)).then(() => showToast('Contact copied!'));
+    };
+
     let cadenceText = '';
     if (p.Cadence && p.Cadence !== '0') {
       let nDate = nextContactDate(p);
@@ -747,34 +840,62 @@
       cadenceText = `Every ${p.Cadence} days (Next: ${dText})`;
     }
 
-    const fields = [
-      ['Phone', p['Phone']],
-      ['Handle', p['Handle']],
+    const sList = personSkills(p);
+    const skillHtml = sList.map(s => {
+      const skObj = (db.skills || []).find(x => x['Skill / Specialization'] === s);
+      const cat = skObj ? skObj.Category : 'Other';
+      const col = catColor(cat);
+      return `<div class="dp-skill-pill" style="border-color:${col}22; color:${col}; background:${col}11;">${s}</div>`;
+    }).join(' ');
+
+    const formatArray = (arr) => arr.length ? arr.join(', ') : '';
+    const formatLines = (arr) => arr.length ? arr.join('<br/>') : '';
+
+    const rows = [
+      ['Role / Title', p['Cybersecurity Role'] || p['Current Title']],
+      ['Experience', p['Experience Level']],
+      ['Company', p['Current Company']],
+      ['Status', p['Status']],
+      ['Phone(s)', formatLines(getArray(p, 'Phones')) || p['Phone']],
+      ['Email(s)', formatLines(getArray(p, 'Emails')) || p['Email']],
       ['Location', p['Location']],
-      ['Website', p['Website'] ? `<a href="${p['Website']}" target="_blank" style="color:var(--accent);text-decoration:underline;">${p['Website']}</a>` : ''],
-      ['GitHub', p['GitHub'] ? `<a href="${p['GitHub']}" target="_blank" style="color:var(--accent);text-decoration:underline;">${p['GitHub']}</a>` : ''],
-      ['LinkedIn', p['LinkedIn'] ? `<a href="${p['LinkedIn']}" target="_blank" style="color:var(--accent);text-decoration:underline;">${p['LinkedIn']}</a>` : ''],
-      ['Nickname', p['Preferred Name']],
+      ['Languages', formatArray(getArray(p, 'Languages'))],
+      ['Telegram(s)', formatArray(getArray(p, 'Telegrams')) || p['Telegram']],
+      ['Discord(s)', formatArray(getArray(p, 'Discords')) || p['Discord']],
+      ['LinkedIn', p['LinkedIn'] ? `<a href="${p['LinkedIn']}" target="_blank" style="color:var(--accent);">${p['LinkedIn']}</a>` : ''],
+      ['GitHub', p['GitHub'] ? `<a href="${p['GitHub']}" target="_blank" style="color:var(--accent);">${p['GitHub']}</a>` : ''],
+      ['Website', p['Website'] ? `<a href="${p['Website']}" target="_blank" style="color:var(--accent);">${p['Website']}</a>` : ''],
       ['Where Met', p['Where Met']],
+      ['Topics', formatArray(getArray(p, 'Topics'))],
+      ['Projects', formatArray(getArray(p, 'Projects'))],
       ['Cadence', cadenceText],
       ['Goals', p['Goals']],
       ['Interests', p['Interests']],
       ['Context', p['PersonalContext']],
       ['Notes', p['Note'] || p['Notes']],
-      ['Skills', personSkills(p).join(', ')],
-    ].filter(([,v]) => v);
+      ['Skills', skillHtml]
+    ];
 
-    document.getElementById('dp-body').innerHTML = fields.map(([k, v]) => `
-      <div class="detail-row">
-        <div class="detail-row-label">${k}</div>
-        <div class="detail-row-val">${v}</div>
-      </div>`).join('');
+    document.getElementById('dp-body').innerHTML = rows.map(([k, v]) => {
+      const isEmpty = !v || v.toString().trim() === '';
+      const displayVal = isEmpty ? '—' : v;
+      // create safe string for copy, strip HTML
+      const copyVal = isEmpty ? '' : v.toString().replace(/<[^>]*>?/gm, '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+      return `
+      <div class="static-row ${isEmpty ? 'static-row-empty' : ''}">
+        <div class="static-row-label">${k}</div>
+        <div class="static-row-val">${displayVal}</div>
+        ${!isEmpty ? `<div class="copy-btn" onclick="copyField('${copyVal}')" title="Copy ${k}">📋</div>` : ''}
+      </div>`;
+    }).join('');
 
     renderInteractions(p['Person ID']);
     document.getElementById('detail-panel').classList.add('open');
   }
 
   // ─── SKILLS VIEW ──────────────────────────────────────────────────
+  let draggedSkill = null;
+
   function renderSkills() {
     const el = document.getElementById('view-skills');
     const byCategory = {};
@@ -784,16 +905,106 @@
       byCategory[cat].push(s['Skill / Specialization']);
     });
 
+    const addCatHtml = `<div style="margin-top:24px;"><button class="btn-primary" onclick="addCategory()">+ New Category</button></div>`;
+
     el.innerHTML = Object.entries(byCategory).sort((a,b) => b[1].length - a[1].length).map(([cat, skList]) => {
       const col = catColor(cat);
+      const encCat = cat.replace(/'/g, "\\'");
       return `
-        <div class="skills-cat-section">
-          <div class="skills-cat-title" style="color:${col}">${cat} <span style="color:var(--muted);font-weight:400">(${skList.length})</span></div>
+        <div class="skills-cat-section" 
+             ondragover="event.preventDefault(); this.classList.add('drop-zone-active')" 
+             ondragleave="this.classList.remove('drop-zone-active')"
+             ondrop="dropSkill(event, '${encCat}')">
+          
+          <div class="skills-cat-title" style="color:${col}; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <span ondblclick="renameCategory('${encCat}')" title="Double click to rename" style="cursor:text">${cat}</span>
+              <span style="color:var(--muted);font-weight:400;font-size:12px;margin-left:8px;">(${skList.length})</span>
+            </div>
+            <div>
+              <button onclick="addSkillToCat('${encCat}')" class="btn-ghost" style="padding:2px 8px;font-size:12px;">+ Add Skill</button>
+              <button onclick="deleteCategory('${encCat}')" class="btn-ghost" style="padding:2px 8px;font-size:12px;color:var(--red);">Delete</button>
+            </div>
+          </div>
           <div class="skills-list">
-            ${skList.map(s => `<div class="skill-pill" style="border-color:${col}22;color:${col}">${s}</div>`).join('')}
+            ${skList.map(s => {
+              const encS = s.replace(/'/g, "\\'");
+              return `
+              <div class="skill-pill" draggable="true" 
+                   ondragstart="dragStartSkill(event, '${encS}')"
+                   style="border-color:${col}22;color:${col}">
+                ${s}
+                <span class="skill-delete-btn" onclick="deleteSkill('${encS}')">×</span>
+              </div>`;
+            }).join('')}
           </div>
         </div>`;
-    }).join('');
+    }).join('') + addCatHtml;
+  }
+
+  function dragStartSkill(e, skill) {
+    draggedSkill = skill;
+  }
+
+  async function dropSkill(e, newCat) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drop-zone-active');
+    if (!draggedSkill) return;
+    
+    let sk = db.skills.find(x => x['Skill / Specialization'] === draggedSkill);
+    if (sk && sk.Category !== newCat) {
+      sk.Category = newCat;
+      await saveFile();
+      renderSkills();
+    }
+    draggedSkill = null;
+  }
+
+  async function addCategory() {
+    const name = prompt("Enter new category name:");
+    if (!name || name.trim() === "") return;
+    const skillName = prompt(`Enter the first skill for '${name}':`);
+    if (!skillName || skillName.trim() === "") return;
+    if (!db.skills) db.skills = [];
+    db.skills.push({ 'Skill / Specialization': skillName.trim(), 'Category': name.trim() });
+    await saveFile();
+    renderSkills();
+  }
+
+  async function addSkillToCat(cat) {
+    const name = prompt(`Enter new skill for '${cat}':`);
+    if (!name || name.trim() === "") return;
+    if (!db.skills) db.skills = [];
+    if (db.skills.find(x => x['Skill / Specialization'] === name.trim())) {
+      showToast('Skill already exists!'); return;
+    }
+    db.skills.push({ 'Skill / Specialization': name.trim(), 'Category': cat });
+    await saveFile();
+    renderSkills();
+  }
+
+  async function deleteSkill(name) {
+    if(!confirm(`Delete skill '${name}'?`)) return;
+    db.skills = db.skills.filter(x => x['Skill / Specialization'] !== name);
+    await saveFile();
+    renderSkills();
+  }
+
+  async function renameCategory(oldCat) {
+    const newCat = prompt("Rename category to:", oldCat);
+    if (!newCat || newCat.trim() === "" || newCat === oldCat) return;
+    db.skills.forEach(s => {
+      if (s.Category === oldCat) s.Category = newCat.trim();
+    });
+    await saveFile();
+    renderSkills();
+  }
+
+  async function deleteCategory(cat) {
+    if(!confirm(`Delete entire category '${cat}' and ALL its skills?`)) return;
+    db.skills = db.skills.filter(s => s.Category !== cat);
+    await saveFile();
+    renderSkills();
   }
 
   // ─── CRM v2 HELPERS & INTERACTION LOGGER ──────────────────────────
@@ -908,14 +1119,21 @@
     let linkedin = document.getElementById('f-linkedin').value.trim();
     if(linkedin && !linkedin.startsWith('http')) linkedin = 'https://linkedin.com/in/' + linkedin;
 
+    const parseComma = (str) => str.split(',').map(s=>s.trim()).filter(Boolean);
+
     const newPerson = {
       'Person ID': 'P-' + Date.now(),
       'Full Name': name,
       'Preferred Name': document.getElementById('f-nickname').value.trim(),
       'Cybersecurity Role': document.getElementById('f-role').value.trim(),
       'Location': document.getElementById('f-location').value.trim(),
-      'Phone': document.getElementById('f-phone').value.trim(),
-      'Handle': document.getElementById('f-handle').value.trim(),
+      'Phones': parseComma(document.getElementById('f-phones').value),
+      'Emails': parseComma(document.getElementById('f-emails').value),
+      'Telegrams': parseComma(document.getElementById('f-telegrams').value),
+      'Discords': parseComma(document.getElementById('f-discords').value),
+      'Languages': parseComma(document.getElementById('f-languages').value),
+      'Topics': parseComma(document.getElementById('f-topics').value),
+      'Projects': parseComma(document.getElementById('f-projects').value),
       'Website': website,
       'GitHub': github,
       'LinkedIn': linkedin,
@@ -930,7 +1148,10 @@
     };
 
     // Remove empty fields
-    Object.keys(newPerson).forEach(k => { if (!newPerson[k]) delete newPerson[k]; });
+    Object.keys(newPerson).forEach(k => { 
+      if (Array.isArray(newPerson[k]) && newPerson[k].length === 0) delete newPerson[k];
+      else if (!newPerson[k] && newPerson[k] !== 0) delete newPerson[k]; 
+    });
 
     db.people.unshift(newPerson);
     await saveFile();
