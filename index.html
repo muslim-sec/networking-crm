@@ -255,6 +255,26 @@
       from { opacity: 0; } to { opacity: 1; }
     }
 
+    /* ─── CRM v2 FEATURES ─── */
+    .health-dot {
+      position: absolute; top: 16px; right: 16px; width: 10px; height: 10px; border-radius: 50%;
+    }
+    .health-dot.green { background: var(--green); box-shadow: 0 0 8px rgba(16,185,129,0.4); }
+    .health-dot.amber { background: var(--amber); box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+    .health-dot.red { background: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.4); }
+    .health-dot.grey { background: var(--muted); }
+
+    .interaction-list { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; max-height: 300px; overflow-y: auto; padding-right: 4px; }
+    .interaction-entry {
+      background: var(--card); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+      border-radius: 8px; padding: 12px; font-size: 13px;
+    }
+    .interaction-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .interaction-date { font-weight: 600; color: var(--muted); font-size: 11.5px; }
+    .interaction-type-badge {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: rgba(109,40,217,0.15); color: #a78bfa;
+    }
+
     /* ─── UTILS ─── */
     .hidden { display: none !important; }
     .empty-msg { text-align: center; color: var(--muted); font-size: 14px; padding: 40px; }
@@ -329,7 +349,7 @@
         <div class="modal-row">
           <div class="form-group">
             <label class="form-label">Full Name *</label>
-            <input class="form-input" id="f-name" required placeholder="Yousef Rahmoni" />
+            <input class="form-input" id="f-name" required placeholder="Enter full name" />
           </div>
           <div class="form-group">
             <label class="form-label">Preferred Name</label>
@@ -352,23 +372,68 @@
             <input class="form-input" id="f-phone" placeholder="+212 6xx-xxx-xxx" />
           </div>
           <div class="form-group">
-            <label class="form-label">Handle / Username</label>
-            <input class="form-input" id="f-handle" placeholder="@username" />
-          </div>
-        </div>
-        <div class="modal-row">
-          <div class="form-group">
-            <label class="form-label">Website / GitHub</label>
-            <input class="form-input" id="f-website" placeholder="https://..." />
-          </div>
-          <div class="form-group">
             <label class="form-label">Where We Met</label>
             <input class="form-input" id="f-met" placeholder="e.g. CTF, Conference, Discord" />
           </div>
         </div>
+        
+        <div class="modal-row">
+          <div class="form-group">
+            <label class="form-label">Keep-in-Touch Cadence</label>
+            <select class="form-select" id="f-cadence">
+              <option value="0">No Reminders</option>
+              <option value="30">Every 30 days</option>
+              <option value="60">Every 60 days</option>
+              <option value="90">Every 90 days</option>
+              <option value="180">Every 180 days</option>
+              <option value="365">Every Year</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Handle / Username</label>
+            <input class="form-input" id="f-handle" placeholder="@username" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Website</label>
+          <div style="display:flex; background:var(--card); border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+            <span style="padding:8px; color:var(--muted); font-size:13px; background:var(--surface); border-right:1px solid var(--border);">https://</span>
+            <input class="form-input" id="f-website" style="border:none; border-radius:0; flex:1; outline:none;" placeholder="example.com" />
+          </div>
+        </div>
+        <div class="modal-row">
+          <div class="form-group">
+            <label class="form-label">GitHub</label>
+            <div style="display:flex; background:var(--card); border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+              <span style="padding:8px; color:var(--muted); font-size:13px; background:var(--surface); border-right:1px solid var(--border);">github.com/</span>
+              <input class="form-input" id="f-github" style="border:none; border-radius:0; flex:1; outline:none;" placeholder="username" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">LinkedIn</label>
+            <div style="display:flex; background:var(--card); border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+              <span style="padding:8px; color:var(--muted); font-size:13px; background:var(--surface); border-right:1px solid var(--border);">linkedin.com/in/</span>
+              <input class="form-input" id="f-linkedin" style="border:none; border-radius:0; flex:1; outline:none;" placeholder="username" />
+            </div>
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Skills</label>
           <div class="skill-select-area" id="skill-checkboxes"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Goals / What They're Building</label>
+          <textarea class="form-textarea" id="f-goals" placeholder="What are they focused on?"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Personal Interests</label>
+          <textarea class="form-textarea" id="f-interests" placeholder="Hobbies, favorite topics, etc."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Context (Partner, Background)</label>
+          <textarea class="form-textarea" id="f-context" placeholder="Significant other, background facts..."></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">Notes</label>
@@ -393,7 +458,27 @@
       <button class="modal-close" id="btn-detail-close">✕</button>
     </div>
     <div class="detail-body" id="dp-body"></div>
+    <div id="dp-interactions" style="padding: 0 24px 24px 24px;"></div>
   </div>
+
+  <!-- INTERACTION MODAL -->
+  <div id="interaction-modal" class="hidden" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:var(--surface); border:1px solid var(--border); padding:24px; border-radius:12px; z-index:1000; width:400px; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+    <h3 style="margin-bottom:16px;">Log Interaction</h3>
+    <input class="form-input" id="int-date" type="date" style="margin-bottom:12px;" />
+    <select class="form-select" id="int-type" style="margin-bottom:12px;">
+      <option value="Meeting">Meeting</option>
+      <option value="Email">Email</option>
+      <option value="Call">Call</option>
+      <option value="Message">Message</option>
+      <option value="Coffee">Coffee</option>
+    </select>
+    <textarea class="form-textarea" id="int-notes" placeholder="Notes..." style="margin-bottom:16px;"></textarea>
+    <div style="display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn btn-secondary" onclick="document.getElementById('interaction-modal').classList.add('hidden')">Cancel</button>
+      <button class="btn btn-primary" id="btn-save-interaction">Save</button>
+    </div>
+  </div>
+
 
   <script>
   // ─── STATE ─────────────────────────────────────────────────────
@@ -559,6 +644,18 @@
         }).join('')}
       </div>
 
+      ${(() => {
+        let overdue = people.filter(p => healthClass(p) === 'red');
+        if (!overdue.length) return '';
+        overdue.sort((a,b) => nextContactDate(a) - nextContactDate(b));
+        return `
+          <div class="dash-section-title" style="color:var(--red);">Action Required (Overdue)</div>
+          <div class="people-grid" style="margin-bottom: 24px;">
+            ${overdue.slice(0, 5).map(renderPersonCard).join('')}
+          </div>
+        `;
+      })()}
+
       <div class="dash-section-title">Your Contacts</div>
       <div class="people-grid">
         ${people.slice(0,6).map(renderPersonCard).join('')}
@@ -605,8 +702,10 @@
 
     const meta = [phone, loc, handle].filter(Boolean).slice(0,2).join(' · ');
 
+    const hc = healthClass(p);
     return `
       <div class="person-card" data-id="${p['Person ID'] || ''}">
+        <div class="health-dot ${hc}" title="Health: ${hc}"></div>
         <div style="display:flex;align-items:flex-start;gap:12px">
           <div class="person-avatar">${initials}</div>
           <div style="flex:1;min-width:0">
@@ -641,13 +740,26 @@
     document.getElementById('dp-name').textContent = p['Full Name'] || '—';
     document.getElementById('dp-role').textContent = p['Cybersecurity Role'] || p['Current Title'] || '';
 
+    let cadenceText = '';
+    if (p.Cadence && p.Cadence !== '0') {
+      let nDate = nextContactDate(p);
+      let dText = nDate ? nDate.toLocaleDateString() : '';
+      cadenceText = `Every ${p.Cadence} days (Next: ${dText})`;
+    }
+
     const fields = [
       ['Phone', p['Phone']],
       ['Handle', p['Handle']],
       ['Location', p['Location']],
-      ['Website', p['Website'] ? `<a href="${p['Website']}" target="_blank">${p['Website']}</a>` : ''],
+      ['Website', p['Website'] ? `<a href="${p['Website']}" target="_blank" style="color:var(--accent);text-decoration:underline;">${p['Website']}</a>` : ''],
+      ['GitHub', p['GitHub'] ? `<a href="${p['GitHub']}" target="_blank" style="color:var(--accent);text-decoration:underline;">${p['GitHub']}</a>` : ''],
+      ['LinkedIn', p['LinkedIn'] ? `<a href="${p['LinkedIn']}" target="_blank" style="color:var(--accent);text-decoration:underline;">${p['LinkedIn']}</a>` : ''],
       ['Nickname', p['Preferred Name']],
       ['Where Met', p['Where Met']],
+      ['Cadence', cadenceText],
+      ['Goals', p['Goals']],
+      ['Interests', p['Interests']],
+      ['Context', p['PersonalContext']],
       ['Notes', p['Note'] || p['Notes']],
       ['Skills', personSkills(p).join(', ')],
     ].filter(([,v]) => v);
@@ -658,6 +770,7 @@
         <div class="detail-row-val">${v}</div>
       </div>`).join('');
 
+    renderInteractions(p['Person ID']);
     document.getElementById('detail-panel').classList.add('open');
   }
 
@@ -683,6 +796,84 @@
     }).join('');
   }
 
+  // ─── CRM v2 HELPERS & INTERACTION LOGGER ──────────────────────────
+  function daysSince(dateString) {
+    if (!dateString) return Infinity;
+    return Math.floor((new Date() - new Date(dateString)) / (1000 * 60 * 60 * 24));
+  }
+  
+  function nextContactDate(person) {
+    if (!person.Cadence || person.Cadence === '0') return null;
+    let interactions = (db.interactions || []).filter(i => i.personId === person['Person ID']);
+    interactions.sort((a,b) => new Date(b.date) - new Date(a.date));
+    let lastDate = interactions.length ? interactions[0].date : person['Date Added'] || new Date().toISOString();
+    let nextDate = new Date(lastDate);
+    nextDate.setDate(nextDate.getDate() + parseInt(person.Cadence));
+    return nextDate;
+  }
+
+  function healthClass(person) {
+    if (!person.Cadence || person.Cadence === '0') return 'grey';
+    let nextDate = nextContactDate(person);
+    let daysLeft = Math.floor((nextDate - new Date()) / (1000 * 60 * 60 * 24));
+    if (daysLeft < 0) return 'red';
+    if (daysLeft <= 7) return 'amber';
+    return 'green';
+  }
+
+  function renderInteractions(personId) {
+    const list = (db.interactions || []).filter(i => i.personId === personId).sort((a,b) => new Date(b.date) - new Date(a.date));
+    const container = document.getElementById('dp-interactions');
+    if (!list.length) {
+      container.innerHTML = `<div class="empty-msg" style="padding: 20px;">No interactions logged yet.</div><button class="btn btn-primary" style="width:100%" onclick="logInteraction('${personId}')">+ Log Interaction</button>`;
+      return;
+    }
+    container.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h4 style="margin:0;color:var(--text)">Interactions</h4>
+        <button class="btn btn-primary" onclick="logInteraction('${personId}')">+ Log</button>
+      </div>
+      <div class="interaction-list">
+        ${list.map(i => `
+          <div class="interaction-entry">
+            <div class="interaction-meta">
+              <span class="interaction-type-badge">${i.type}</span>
+              <span class="interaction-date">${new Date(i.date).toLocaleDateString()}</span>
+            </div>
+            <div style="color:var(--text);margin-top:8px;line-height:1.4;">${i.notes}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  let currentInteractionPersonId = null;
+  function logInteraction(personId) {
+    currentInteractionPersonId = personId;
+    document.getElementById('int-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('int-notes').value = '';
+    document.getElementById('interaction-modal').classList.remove('hidden');
+  }
+
+  document.getElementById('btn-save-interaction').addEventListener('click', async () => {
+    if (!db.interactions) db.interactions = [];
+    const date = document.getElementById('int-date').value;
+    const type = document.getElementById('int-type').value;
+    const notes = document.getElementById('int-notes').value;
+    
+    db.interactions.push({
+      id: 'INT-' + Date.now(),
+      personId: currentInteractionPersonId,
+      date, type, notes
+    });
+    
+    document.getElementById('interaction-modal').classList.add('hidden');
+    await saveFile();
+    renderInteractions(currentInteractionPersonId);
+    if(currentView === 'dashboard') renderDashboard();
+    if(currentView === 'people') renderPeople();
+  });
+
   // ─── ADD CONTACT MODAL ────────────────────────────────────────────
   function openModal() {
     // populate skill checkboxes
@@ -706,6 +897,16 @@
     if (!name) { document.getElementById('f-name').focus(); return; }
 
     const checked = [...document.querySelectorAll('#skill-checkboxes input:checked')].map(c => c.value);
+    
+    // Process website/links
+    let website = document.getElementById('f-website').value.trim();
+    if(website && !website.startsWith('http')) website = 'https://' + website;
+    
+    let github = document.getElementById('f-github').value.trim();
+    if(github && !github.startsWith('http')) github = 'https://github.com/' + github;
+    
+    let linkedin = document.getElementById('f-linkedin').value.trim();
+    if(linkedin && !linkedin.startsWith('http')) linkedin = 'https://linkedin.com/in/' + linkedin;
 
     const newPerson = {
       'Person ID': 'P-' + Date.now(),
@@ -715,10 +916,17 @@
       'Location': document.getElementById('f-location').value.trim(),
       'Phone': document.getElementById('f-phone').value.trim(),
       'Handle': document.getElementById('f-handle').value.trim(),
-      'Website': document.getElementById('f-website').value.trim(),
+      'Website': website,
+      'GitHub': github,
+      'LinkedIn': linkedin,
       'Where Met': document.getElementById('f-met').value.trim(),
       'Specialization': checked.join(', '),
+      'Cadence': document.getElementById('f-cadence').value,
+      'Goals': document.getElementById('f-goals').value.trim(),
+      'Interests': document.getElementById('f-interests').value.trim(),
+      'PersonalContext': document.getElementById('f-context').value.trim(),
       'Note': document.getElementById('f-notes').value.trim(),
+      'Date Added': new Date().toISOString()
     };
 
     // Remove empty fields
