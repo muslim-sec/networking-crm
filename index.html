@@ -196,7 +196,7 @@
     #modal-overlay.open { opacity: 1; pointer-events: all; }
     #modal-box {
       background: var(--surface); border: 1px solid var(--border2); border-radius: 16px;
-      width: min(560px, 95vw); max-height: 90dvh; overflow-y: auto;
+      width: min(900px, 95vw); max-height: 95dvh; overflow-y: auto;
       transform: scale(0.96) translateY(8px); transition: transform 0.2s;
     }
     #modal-overlay.open #modal-box { transform: scale(1) translateY(0); }
@@ -204,8 +204,9 @@
     .modal-title { font-size: 15px; font-weight: 600; }
     .modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: color 0.15s; }
     .modal-close:hover { color: var(--text); }
-    .modal-body { padding: 20px; display: grid; gap: 14px; }
-    .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-body { padding: 20px; display: grid; gap: 16px; }
+    .modal-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .modal-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .form-group { display: flex; flex-direction: column; gap: 5px; }
     .form-label { font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
     .form-input, .form-textarea, .form-select {
@@ -375,18 +376,17 @@
             <label class="form-label">Preferred Name</label>
             <input class="form-input" id="f-nickname" placeholder="Alias / Handle" />
           </div>
-        </div>
-        <div class="modal-row">
           <div class="form-group">
             <label class="form-label">Primary Role</label>
             <input class="form-input" id="f-role" placeholder="e.g. Red Teamer, Full Stack Dev" />
           </div>
+        </div>
+
+        <div class="modal-row">
           <div class="form-group">
             <label class="form-label">Location</label>
             <input class="form-input" id="f-location" placeholder="e.g. Casablanca" />
           </div>
-        </div>
-        <div class="modal-row">
           <div class="form-group">
             <label class="form-label">Phone(s) (comma-separated)</label>
             <input class="form-input" id="f-phones" placeholder="+212 xxx, +1 xxx" />
@@ -406,29 +406,28 @@
             <label class="form-label">Discord(s) (comma-separated)</label>
             <input class="form-input" id="f-discords" placeholder="user#1234, other" />
           </div>
-        </div>
-
-        <div class="modal-row">
           <div class="form-group">
             <label class="form-label">Languages (comma-separated)</label>
             <input class="form-input" id="f-languages" placeholder="English, Arabic, French" />
           </div>
-          <div class="form-group">
-            <label class="form-label">Topics (comma-separated)</label>
-            <input class="form-input" id="f-topics" placeholder="AI, Crypto, Design" />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Projects (comma-separated)</label>
-          <input class="form-input" id="f-projects" placeholder="Project A, Project B" />
         </div>
 
         <div class="modal-row">
           <div class="form-group">
+            <label class="form-label">Topics (comma-separated)</label>
+            <input class="form-input" id="f-topics" placeholder="AI, Crypto, Design" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Projects (comma-separated)</label>
+            <input class="form-input" id="f-projects" placeholder="Project A, Project B" />
+          </div>
+          <div class="form-group">
             <label class="form-label">Where We Met</label>
             <input class="form-input" id="f-met" placeholder="e.g. CTF, Conference, Discord" />
           </div>
+        </div>
+
+        <div class="modal-row">
           <div class="form-group">
             <label class="form-label">Keep-in-Touch Cadence</label>
             <select class="form-select" id="f-cadence">
@@ -440,16 +439,13 @@
               <option value="365">Every Year</option>
             </select>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Website</label>
-          <div style="display:flex; background:var(--card); border:1px solid var(--border); border-radius:8px; overflow:hidden;">
-            <span style="padding:8px; color:var(--muted); font-size:13px; background:var(--surface); border-right:1px solid var(--border);">https://</span>
-            <input class="form-input" id="f-website" style="border:none; border-radius:0; flex:1; outline:none;" placeholder="example.com" />
+          <div class="form-group">
+            <label class="form-label">Website</label>
+            <div style="display:flex; background:var(--card); border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+              <span style="padding:8px; color:var(--muted); font-size:13px; background:var(--surface); border-right:1px solid var(--border);">https://</span>
+              <input class="form-input" id="f-website" style="border:none; border-radius:0; flex:1; outline:none;" placeholder="example.com" />
+            </div>
           </div>
-        </div>
-        <div class="modal-row">
           <div class="form-group">
             <label class="form-label">GitHub</label>
             <div style="display:flex; background:var(--card); border:1px solid var(--border); border-radius:8px; overflow:hidden;">
@@ -457,6 +453,9 @@
               <input class="form-input" id="f-github" style="border:none; border-radius:0; flex:1; outline:none;" placeholder="username" />
             </div>
           </div>
+        </div>
+
+        <div class="modal-row">
           <div class="form-group">
             <label class="form-label">LinkedIn</label>
             <div style="display:flex; background:var(--card); border:1px solid var(--border); border-radius:8px; overflow:hidden;">
@@ -470,21 +469,26 @@
           <label class="form-label">Skills</label>
           <div class="skill-select-area" id="skill-checkboxes"></div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Goals / What They're Building</label>
-          <textarea class="form-textarea" id="f-goals" placeholder="What are they focused on?"></textarea>
+        
+        <div class="modal-row-2">
+          <div class="form-group">
+            <label class="form-label">Goals / What They're Building</label>
+            <textarea class="form-textarea" id="f-goals" placeholder="What are they focused on?"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Personal Interests</label>
+            <textarea class="form-textarea" id="f-interests" placeholder="Hobbies, favorite topics, etc."></textarea>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Personal Interests</label>
-          <textarea class="form-textarea" id="f-interests" placeholder="Hobbies, favorite topics, etc."></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Context (Partner, Background)</label>
-          <textarea class="form-textarea" id="f-context" placeholder="Significant other, background facts..."></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Notes</label>
-          <textarea class="form-textarea" id="f-notes" placeholder="Additional notes..."></textarea>
+        <div class="modal-row-2">
+          <div class="form-group">
+            <label class="form-label">Context (Partner, Background)</label>
+            <textarea class="form-textarea" id="f-context" placeholder="Significant other, background facts..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea class="form-textarea" id="f-notes" placeholder="Additional notes..."></textarea>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
