@@ -378,7 +378,8 @@
           <div class="onboard-icon">🗂</div>
           <h2>Load your CRM data</h2>
           <p>Select the <strong>crm-data.json</strong> file in your Local_CRM folder to get started.</p>
-          <button class="btn-load-big" id="btn-load-onboard">Select crm-data.json</button>
+          <button class="btn-load-big" id="btn-resume-session" style="display:none; background: var(--accent); margin-bottom: 12px;">Resume Session (crm-data.json)</button>
+          <button class="btn-load-big" id="btn-load-onboard" style="background: var(--surface); color: var(--text); border: 1px solid var(--border);">Select Different File</button>
         </div>
 
         <!-- DASHBOARD VIEW -->
@@ -635,15 +636,41 @@
   function catColor(cat) { return catColors[cat] || '#6d28d9'; }
 
   // ─── FILE SYSTEM ACCESS ─────────────────────────────────────────
-  async function loadFile() {
-    if (!window.showOpenFilePicker) {
-      alert('Please open this file in Chrome or Edge (File System Access API required).');
-      return;
-    }
+
+  // ─── FILE HANDLE PERSISTENCE ───
+  function idbReady() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('crmDB', 1);
+      req.onupgradeneeded = e => {
+        e.target.result.createObjectStore('handles');
+      };
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror = () => reject('IDB error');
+    });
+  }
+
+  async function saveHandleToIDB(handle) {
     try {
-      [fileHandle] = await window.showOpenFilePicker({
-        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+      const dbInstance = await idbReady();
+      const tx = dbInstance.transaction('handles', 'readwrite');
+      tx.objectStore('handles').put(handle, 'crm-file');
+    } catch(e) { console.warn(e); }
+  }
+
+  async function getHandleFromIDB() {
+    try {
+      const dbInstance = await idbReady();
+      return new Promise((resolve) => {
+        const tx = dbInstance.transaction('handles', 'readonly');
+        const req = tx.objectStore('handles').get('crm-file');
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
       });
+    } catch(e) { return null; }
+  }
+
+  async function readAndBootFile() {
+    try {
       const file = await fileHandle.getFile();
       const text = await file.text();
       db = JSON.parse(text);
@@ -653,6 +680,25 @@
       if (!db.organizations) db.organizations = [];
       if (!db.followups) db.followups = [];
       afterLoad();
+    } catch (e) {
+      console.error(e);
+      alert("Failed to read the file. It might have been moved or deleted.");
+      document.getElementById('btn-resume-session').style.display = 'none';
+      document.getElementById('btn-load-onboard').style.display = 'inline-block';
+    }
+  }
+
+  async function loadFile() {
+    if (!window.showOpenFilePicker) {
+      alert('Please open this file in Chrome or Edge (File System Access API required).');
+      return;
+    }
+    try {
+      [fileHandle] = await window.showOpenFilePicker({
+        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+      });
+      await saveHandleToIDB(fileHandle);
+      await readAndBootFile();
     } catch (e) {
       if (e.name !== 'AbortError') console.error(e);
     }
@@ -1443,6 +1489,33 @@
       document.querySelectorAll('.field-chooser-panel.open').forEach(p => p.classList.remove('open'));
     }
   });
+
+  
+  (async function initApp() {
+    const storedHandle = await getHandleFromIDB();
+    if (storedHandle) {
+      fileHandle = storedHandle;
+      const resumeBtn = document.getElementById('btn-resume-session');
+      const loadBtn = document.getElementById('btn-load-onboard');
+      
+      // We have a stored handle, so show resume and fade load button
+      resumeBtn.style.display = 'inline-block';
+      loadBtn.textContent = 'Select Different File';
+      
+      resumeBtn.onclick = async () => {
+        try {
+          if ((await fileHandle.queryPermission({mode: 'readwrite'})) !== 'granted') {
+            const perm = await fileHandle.requestPermission({mode: 'readwrite'});
+            if (perm !== 'granted') return;
+          }
+          await readAndBootFile();
+        } catch (e) {
+          console.error(e);
+          resumeBtn.style.display = 'none';
+        }
+      };
+    }
+  })();
 
   // Initial: hide search on dashboard
   document.getElementById('search-input').style.display = 'none';
