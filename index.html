@@ -203,6 +203,28 @@
     .dp-edit-select { background: var(--surface); }
     .dp-edit-input:focus, .dp-edit-textarea:focus, .dp-edit-select:focus { border-color: var(--accent); background: rgba(0,0,0,0.2); }
     .dp-edit-textarea { resize: vertical; min-height: 50px; }
+    
+    /* ─── CHIPS & PILLS ─── */
+    .view-pill {
+      display: inline-block; padding: 4px 10px; background: rgba(109,40,217,0.1); 
+      color: var(--accent); border-radius: 14px; font-size: 12px; font-weight: 600; margin: 2px;
+    }
+    .chip-container {
+      display: flex; flex-wrap: wrap; gap: 6px; padding: 6px;
+      border: 1px solid var(--border2); border-radius: 6px; background: rgba(0,0,0,0.1);
+      min-height: 38px; align-items: center;
+    }
+    .chip-container:focus-within { border-color: var(--accent); background: rgba(0,0,0,0.2); }
+    .chip-badge {
+      display: flex; align-items: center; gap: 4px; padding: 4px 8px;
+      background: var(--accent); color: #fff; border-radius: 12px; font-size: 12px; font-weight: 500;
+    }
+    .chip-badge-remove { cursor: pointer; font-weight: bold; opacity: 0.7; }
+    .chip-badge-remove:hover { opacity: 1; }
+    .chip-input {
+      flex: 1; min-width: 60px; border: none; background: transparent; outline: none;
+      color: var(--text); font-size: 14px;
+    }
     .dp-save-bar {
       position: sticky; bottom: 0; background: var(--card); padding: 16px 24px; border-top: 1px solid var(--border);
       display: flex; justify-content: flex-end; align-items: center; gap: 12px; z-index: 10; margin: 0 -24px -24px -24px;
@@ -337,6 +359,23 @@
   </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="liquid-phone" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <linearGradient id="liquid-email" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#ec4899" />
+    </linearGradient>
+    <linearGradient id="liquid-name" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#14b8a6" />
+    </linearGradient>
+  </defs>
+</svg>
+
   <!-- TOPBAR FILE LOAD -->
   <div id="layout">
     <!-- SIDEBAR -->
@@ -600,9 +639,10 @@
     setTimeout(() => t.classList.remove('show'), 1500);
   }
 
-  function copyField(val) {
+  function copyField(label, val) {
     if (!val) return;
-    navigator.clipboard.writeText(val).then(() => showToast('Copied!'));
+    const cleanLabel = label.replace(/\(s\)/g, ''); // strip (s)
+    navigator.clipboard.writeText(`${cleanLabel}: ${val}`).then(() => showToast('Copied!'));
   }
 
   function buildShareText(p) {
@@ -823,7 +863,7 @@
     });
     skillHtml += '</div>';
 
-    const formatArray = (arr) => arr.length ? arr.join(', ') : '';
+    const getArrOrLegacy = (key, legacyKey) => getArray(p, key).length ? getArray(p, key) : (p[legacyKey] ? [p[legacyKey]] : []);
     
     const rows = [
       {k: 'Full Name', key: 'Full Name', val: p['Full Name'] || '', type: 'input'},
@@ -832,18 +872,18 @@
       {k: 'Experience', key: 'Experience Level', val: p['Experience Level'] || '', type: 'select', opts: ['Junior','Mid','Senior','Lead','Expert']},
       {k: 'Company', key: 'Current Company', val: p['Current Company'] || '', type: 'input'},
       {k: 'Status', key: 'Status', val: p['Status'] || '', type: 'select', opts: ['Active','Passive','Lost Touch','VIP']},
-      {k: 'Phone(s)', key: 'Phones', val: formatArray(getArray(p, 'Phones')) || p['Phone'] || '', type: 'input'},
-      {k: 'Email(s)', key: 'Emails', val: formatArray(getArray(p, 'Emails')) || p['Email'] || '', type: 'input'},
+      {k: 'Phone(s)', key: 'Phones', val: getArrOrLegacy('Phones', 'Phone'), type: 'tags'},
+      {k: 'Email(s)', key: 'Emails', val: getArrOrLegacy('Emails', 'Email'), type: 'tags'},
       {k: 'Location', key: 'Location', val: p['Location'] || '', type: 'input'},
-      {k: 'Languages', key: 'Languages', val: formatArray(getArray(p, 'Languages')), type: 'input'},
-      {k: 'Telegram(s)', key: 'Telegrams', val: formatArray(getArray(p, 'Telegrams')) || p['Telegram'] || '', type: 'input'},
-      {k: 'Discord(s)', key: 'Discords', val: formatArray(getArray(p, 'Discords')) || p['Discord'] || '', type: 'input'},
+      {k: 'Languages', key: 'Languages', val: getArray(p, 'Languages'), type: 'tags'},
+      {k: 'Telegram(s)', key: 'Telegrams', val: getArrOrLegacy('Telegrams', 'Telegram'), type: 'tags'},
+      {k: 'Discord(s)', key: 'Discords', val: getArrOrLegacy('Discords', 'Discord'), type: 'tags'},
       {k: 'LinkedIn', key: 'LinkedIn', val: p['LinkedIn'] || '', type: 'input'},
       {k: 'GitHub', key: 'GitHub', val: p['GitHub'] || '', type: 'input'},
       {k: 'Website', key: 'Website', val: p['Website'] || '', type: 'input'},
       {k: 'Where Met', key: 'Where Met', val: p['Where Met'] || '', type: 'input'},
-      {k: 'Topics', key: 'Topics', val: formatArray(getArray(p, 'Topics')), type: 'input'},
-      {k: 'Projects', key: 'Projects', val: formatArray(getArray(p, 'Projects')), type: 'input'},
+      {k: 'Topics', key: 'Topics', val: getArray(p, 'Topics'), type: 'tags'},
+      {k: 'Projects', key: 'Projects', val: getArray(p, 'Projects'), type: 'tags'},
       {k: 'Cadence', key: 'Cadence', val: p['Cadence'] || '0', type: 'select', opts: ['0','30','60','90','180','365']},
       {k: 'Goals', key: 'Goals', val: p['Goals'] || '', type: 'textarea'},
       {k: 'Interests', key: 'Interests', val: p['Interests'] || '', type: 'textarea'},
@@ -883,14 +923,23 @@
 
     bodyHtml += rows.map(r => {
       let inputHtml = '';
-      const safeVal = r.val.replace(/"/g, '&quot;');
       if (r.type === 'input') {
+        const safeVal = r.val.replace(/"/g, '&quot;');
         inputHtml = `<input type="text" class="dp-edit-input" data-key="${r.key}" value="${safeVal}">`;
       } else if (r.type === 'textarea') {
+        const safeVal = r.val.replace(/"/g, '&quot;');
         inputHtml = `<textarea class="dp-edit-textarea" data-key="${r.key}">${safeVal}</textarea>`;
       } else if (r.type === 'select') {
         const opts = r.opts.map(o => `<option value="${o}" ${r.val===o?'selected':''}>${o==='0'?'None':o}</option>`).join('');
         inputHtml = `<select class="dp-edit-select" data-key="${r.key}"><option value=""></option>${opts}</select>`;
+      } else if (r.type === 'tags') {
+        const chipsHtml = r.val.map(v => `<span class="chip-badge">${v} <span class="chip-badge-remove" onclick="this.parentElement.remove()">✕</span></span>`).join('');
+        inputHtml = `
+          <div class="chip-container dp-edit-tags" data-key="${r.key}" onclick="this.querySelector('input').focus()">
+            ${chipsHtml}
+            <input type="text" class="chip-input" placeholder="Type and press Enter...">
+          </div>
+        `;
       }
       return `
         <div class="static-row">
@@ -1266,11 +1315,14 @@
       const displayVal = isEmpty ? '—' : v;
       // create safe string for copy, strip HTML
       const copyVal = isEmpty ? '' : v.toString().replace(/<[^>]*>?/gm, '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+      let icon = '';
+      if (k === 'Phone(s)') icon = '<svg style="width:16px;height:16px;margin-right:4px;vertical-align:text-bottom" fill="url(#liquid-phone)" viewBox="0 0 24 24"><path d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.896-1.596-5.273-3.973-6.869-6.87l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"/></svg>';
+      else if (k === 'Email(s)') icon = '<svg style="width:16px;height:16px;margin-right:4px;vertical-align:text-bottom" fill="url(#liquid-email)" viewBox="0 0 24 24"><path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z"/><path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z"/></svg>';
       return `
       <div class="static-row ${isEmpty ? 'static-row-empty' : ''}">
-        <div class="static-row-label">${k}</div>
+        <div class="static-row-label" style="display:flex;align-items:center;">${icon}${k}</div>
         <div class="static-row-val">${displayVal}</div>
-        ${!isEmpty ? `<div class="copy-btn" onclick="copyField('${copyVal}')" title="Copy ${k}">📋</div>` : ''}
+        ${!isEmpty ? `<div class="copy-btn" onclick="copyField('${k}', '${copyVal}')" title="Copy ${k}">📋</div>` : ''}
       </div>`;
     }).join('');
 
