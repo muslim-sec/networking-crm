@@ -964,19 +964,7 @@
         inputHtml = `
           <div class="chip-container dp-edit-tags" data-key="${r.key}">
             ${chipsHtml}
-            <select class="chip-select" style="border:none; outline:none; background:transparent; font-size:13px; color:var(--fg); padding:2px; flex:1;" onchange="
-              if (this.value) {
-                const val = this.value.trim();
-                const existing = Array.from(this.parentElement.querySelectorAll('.chip-badge')).map(b => b.childNodes[0].textContent.trim());
-                if (!existing.includes(val)) {
-                  const badge = document.createElement('span');
-                  badge.className = 'chip-badge';
-                  badge.innerHTML = val + ' <span class=\'chip-badge-remove\' onclick=\'this.parentElement.remove()\'>✕</span>';
-                  this.parentElement.insertBefore(badge, this);
-                }
-                this.value = '';
-              }
-            ">
+            <select class="chip-select" style="border:none; outline:none; background:transparent; font-size:13px; color:var(--fg); padding:2px; flex:1;" onchange="window._addSelectChip(this)">
               <option value="" disabled selected>Add Language...</option>
               ${selectOpts}
             </select>
