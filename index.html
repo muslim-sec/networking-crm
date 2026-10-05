@@ -650,6 +650,21 @@
     return p[field].toString().split(',').map(s => s.trim()).filter(Boolean);
   }
 
+
+  window._addSelectChip = function(sel) {
+    if (sel.value) {
+      const val = sel.value.trim();
+      const existing = Array.from(sel.parentElement.querySelectorAll('.chip-badge')).map(b => b.childNodes[0].textContent.trim());
+      if (!existing.includes(val)) {
+        const badge = document.createElement('span');
+        badge.className = 'chip-badge';
+        badge.innerHTML = val + ' <span class="chip-badge-remove" onclick="this.parentElement.remove()">✕</span>';
+        sel.parentElement.insertBefore(badge, sel);
+      }
+      sel.value = '';
+    }
+  };
+
   function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
