@@ -966,10 +966,14 @@
             ${chipsHtml}
             <select class="chip-select" style="border:none; outline:none; background:transparent; font-size:13px; color:var(--fg); padding:2px; flex:1;" onchange="
               if (this.value) {
-                const badge = document.createElement('span');
-                badge.className = 'chip-badge';
-                badge.innerHTML = this.value + ' <span class=\'chip-badge-remove\' onclick=\'this.parentElement.remove()\'>✕</span>';
-                this.parentElement.insertBefore(badge, this);
+                const val = this.value.trim();
+                const existing = Array.from(this.parentElement.querySelectorAll('.chip-badge')).map(b => b.childNodes[0].textContent.trim());
+                if (!existing.includes(val)) {
+                  const badge = document.createElement('span');
+                  badge.className = 'chip-badge';
+                  badge.innerHTML = val + ' <span class=\'chip-badge-remove\' onclick=\'this.parentElement.remove()\'>✕</span>';
+                  this.parentElement.insertBefore(badge, this);
+                }
                 this.value = '';
               }
             ">
@@ -1012,16 +1016,27 @@
     const p = db.people.find(x => x['Person ID'] === id);
     if (!p) return;
 
-    // Collect inputs
+    // Collect standard inputs
     document.querySelectorAll('#dp-body .dp-edit-input, #dp-body .dp-edit-textarea, #dp-body .dp-edit-select').forEach(el => {
       const k = el.dataset.key;
       const v = el.value.trim();
-      
-      // Multi-value handling
-      if (['Phones','Emails','Languages','Telegrams','Discords','Topics','Projects'].includes(k)) {
-        p[k] = v ? v.split(',').map(x=>x.trim()).filter(Boolean) : [];
+      p[k] = v;
+    });
+
+    // Collect tags inputs
+    document.querySelectorAll('#dp-body .dp-edit-tags').forEach(el => {
+      const k = el.dataset.key;
+      const badges = Array.from(el.querySelectorAll('.chip-badge')).map(b => b.childNodes[0].textContent.trim());
+      if (badges.length) {
+        if (k === 'Phones' || k === 'Emails' || k === 'Telegrams' || k === 'Discords') {
+          delete p[k.slice(0, -1)]; // delete singular legacy key
+        }
+        p[k] = badges;
       } else {
-        p[k] = v;
+        delete p[k];
+        if (k === 'Phones' || k === 'Emails' || k === 'Telegrams' || k === 'Discords') {
+          delete p[k.slice(0, -1)]; // delete singular legacy key
+        }
       }
     });
 
