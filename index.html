@@ -1338,6 +1338,7 @@
       return `<div class="dp-skill-pill" style="border-color:${col}22; color:${col}; background:${col}11;">${s}</div>`;
     }).join(' ');
 
+    const formatPills = (arr) => arr.length ? arr.map(a => `<span class="view-pill">${a}</span>`).join('') : '';
     const formatArray = (arr) => arr.length ? arr.join(', ') : '';
     const formatLines = (arr) => arr.length ? arr.join('<br/>') : '';
 
@@ -1346,18 +1347,18 @@
       ['Experience', p['Experience Level']],
       ['Company', p['Current Company']],
       ['Status', p['Status']],
-      ['Phone(s)', formatLines(getArray(p, 'Phones')) || p['Phone']],
-      ['Email(s)', formatLines(getArray(p, 'Emails')) || p['Email']],
+      ['Phone(s)', formatPills(getArray(p, 'Phones')) || (p['Phone'] ? `<span class="view-pill">${p['Phone']}</span>` : '')],
+      ['Email(s)', formatPills(getArray(p, 'Emails')) || (p['Email'] ? `<span class="view-pill">${p['Email']}</span>` : '')],
       ['Location', p['Location']],
-      ['Languages', formatArray(getArray(p, 'Languages'))],
-      ['Telegram(s)', formatArray(getArray(p, 'Telegrams')) || p['Telegram']],
-      ['Discord(s)', formatArray(getArray(p, 'Discords')) || p['Discord']],
+      ['Languages', formatPills(getArray(p, 'Languages'))],
+      ['Telegram(s)', formatPills(getArray(p, 'Telegrams')) || (p['Telegram'] ? `<span class="view-pill">${p['Telegram']}</span>` : '')],
+      ['Discord(s)', formatPills(getArray(p, 'Discords')) || (p['Discord'] ? `<span class="view-pill">${p['Discord']}</span>` : '')],
       ['LinkedIn', p['LinkedIn'] ? `<a href="${p['LinkedIn']}" target="_blank" style="color:var(--accent);">${p['LinkedIn']}</a>` : ''],
       ['GitHub', p['GitHub'] ? `<a href="${p['GitHub']}" target="_blank" style="color:var(--accent);">${p['GitHub']}</a>` : ''],
       ['Website', p['Website'] ? `<a href="${p['Website']}" target="_blank" style="color:var(--accent);">${p['Website']}</a>` : ''],
       ['Where Met', p['Where Met']],
-      ['Topics', formatArray(getArray(p, 'Topics'))],
-      ['Projects', formatArray(getArray(p, 'Projects'))],
+      ['Topics', formatPills(getArray(p, 'Topics'))],
+      ['Projects', formatPills(getArray(p, 'Projects'))],
       ['Cadence', cadenceText],
       ['Goals', p['Goals']],
       ['Interests', p['Interests']],
