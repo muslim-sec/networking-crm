@@ -826,6 +826,8 @@
     const formatArray = (arr) => arr.length ? arr.join(', ') : '';
     
     const rows = [
+      {k: 'Full Name', key: 'Full Name', val: p['Full Name'] || '', type: 'input'},
+      {k: 'AKA', key: 'Preferred Name', val: p['Preferred Name'] || '', type: 'input'},
       {k: 'Role / Title', key: 'Cybersecurity Role', val: p['Cybersecurity Role'] || p['Current Title'] || '', type: 'input'},
       {k: 'Experience', key: 'Experience Level', val: p['Experience Level'] || '', type: 'select', opts: ['Junior','Mid','Senior','Lead','Expert']},
       {k: 'Company', key: 'Current Company', val: p['Current Company'] || '', type: 'input'},
@@ -889,10 +891,9 @@
       <div class="static-row">
         <div class="static-row-label">Picture</div>
         <div class="static-row-val" style="display:flex; align-items:center; gap:8px;">
-          <label class="btn" style="cursor:pointer; padding:4px 8px; font-size:12px;">
-            Upload
-            <input type="file" accept="image/png, image/jpeg, image/webp" style="display:none" onchange="window._handleDpAvatarUpload(this)">
-          </label>
+          <label for="dp-avatar-input" class="btn" style="cursor:pointer; padding:4px 8px; font-size:12px;">Upload</label>
+          <input type="file" id="dp-avatar-input" accept="image/png, image/jpeg, image/webp" style="display:none" onchange="window._handleDpAvatarUpload(this)">
+
           <span class="btn-ghost" id="btn-dp-avatar-remove" style="cursor:pointer; font-size:12px; color:var(--red); display:${dpEditAvatarB64 ? 'inline-block' : 'none'};" onclick="window._handleDpAvatarRemove()">Remove</span>
           <img id="dp-edit-avatar-preview" class="avatar-img" src="${dpEditAvatarB64 || ''}" style="width:30px; height:30px; border-radius:6px; display:${dpEditAvatarB64 ? 'block' : 'none'};">
         </div>
@@ -1170,7 +1171,7 @@
         <div style="display:flex;align-items:flex-start;gap:12px">
           <div class="person-avatar">${p.Picture ? `<img src="${p.Picture}" class="avatar-img">` : initials}</div>
           <div style="flex:1;min-width:0">
-            <div class="person-name">${p['Full Name'] || '—'}</div>
+            <div class="person-name">${p['Full Name'] || '—'}${p['Preferred Name'] ? ` <span style="color:var(--muted); font-size:12px;">(${p['Preferred Name']})</span>` : ''}</div>
             <div class="person-role">${role}</div>
           </div>
         </div>
@@ -1201,7 +1202,7 @@
     } else {
       document.getElementById('dp-avatar').textContent = initials;
     }
-    document.getElementById('dp-name').textContent = p['Full Name'] || '—';
+    document.getElementById('dp-name').innerHTML = (p['Full Name'] || '—') + (p['Preferred Name'] ? ` <span style="color:var(--muted); font-size:14px; font-weight:500;">(${p['Preferred Name']})</span>` : '');
     document.getElementById('dp-role').textContent = p['Cybersecurity Role'] || p['Current Title'] || '';
 
     // setup the share button
