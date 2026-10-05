@@ -143,6 +143,7 @@
     }
     .person-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(109,40,217,0.15); }
     .person-card:hover::after { opacity: 1; }
+    .avatar-img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
     .person-avatar {
       width: 40px; height: 40px; border-radius: 10px;
       background: linear-gradient(135deg, var(--accent), var(--cyan));
@@ -403,9 +404,17 @@
       </div>
       <div class="modal-body">
         <div class="modal-row">
-          <div class="form-group">
-            <label class="form-label">Full Name *</label>
+          <div class="form-group" style="position: relative;">
+            <label class="form-label" style="display:flex; justify-content:space-between;">
+              <span>Full Name *</span>
+              <span>
+                <label for="f-avatar-input" style="cursor:pointer; color:var(--accent); margin-right:8px;">🖼 Upload</label>
+                <span id="btn-modal-avatar-remove" style="cursor:pointer; color:var(--red); display:none;">✕ Remove</span>
+                <input type="file" id="f-avatar-input" accept="image/png, image/jpeg, image/webp" style="display:none">
+              </span>
+            </label>
             <input class="form-input" id="f-name" required placeholder="Enter full name" />
+            <img id="f-avatar-preview" class="avatar-img" style="display:none; position:absolute; right:10px; top:30px; width:28px; height:28px; border-radius:6px; pointer-events:none;">
           </div>
           <div class="form-group">
             <label class="form-label">Preferred Name</label>
@@ -704,6 +713,39 @@
     }
   }
 
+  // ─── AVATAR COMPRESSOR ───
+  function processImageUpload(file) {
+    return new Promise((resolve, reject) => {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast("This is over than the max size");
+        return reject("Size limit exceeded");
+      }
+      if (!file.type.match(/image\/(jpeg|png|webp)/)) {
+        showToast("This format is not supported");
+        return reject("Invalid format");
+      }
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 150;
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; } }
+          else { if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; } }
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.onerror = () => reject("Image load error");
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject("File read error");
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function saveFile() {
     if (!fileHandle) return;
     try {
@@ -825,6 +867,38 @@
         </div>`;
     }).join('');
 
+
+    let dpEditAvatarB64 = p.Picture || null;
+    window._tempDpAvatar = dpEditAvatarB64;
+    window._handleDpAvatarUpload = async function(el) {
+      if(!el.files.length) return;
+      try {
+        window._tempDpAvatar = await processImageUpload(el.files[0]);
+        document.getElementById('dp-edit-avatar-preview').src = window._tempDpAvatar;
+        document.getElementById('dp-edit-avatar-preview').style.display = 'block';
+        document.getElementById('btn-dp-avatar-remove').style.display = 'inline-block';
+      } catch(err) { console.log(err); }
+    };
+    window._handleDpAvatarRemove = function() {
+      window._tempDpAvatar = null;
+      document.getElementById('dp-edit-avatar-preview').style.display = 'none';
+      document.getElementById('btn-dp-avatar-remove').style.display = 'none';
+    };
+
+    bodyHtml += `
+      <div class="static-row">
+        <div class="static-row-label">Picture</div>
+        <div class="static-row-val" style="display:flex; align-items:center; gap:8px;">
+          <label class="btn" style="cursor:pointer; padding:4px 8px; font-size:12px;">
+            Upload
+            <input type="file" accept="image/png, image/jpeg, image/webp" style="display:none" onchange="window._handleDpAvatarUpload(this)">
+          </label>
+          <span class="btn-ghost" id="btn-dp-avatar-remove" style="cursor:pointer; font-size:12px; color:var(--red); display:${dpEditAvatarB64 ? 'inline-block' : 'none'};" onclick="window._handleDpAvatarRemove()">Remove</span>
+          <img id="dp-edit-avatar-preview" class="avatar-img" src="${dpEditAvatarB64 || ''}" style="width:30px; height:30px; border-radius:6px; display:${dpEditAvatarB64 ? 'block' : 'none'};">
+        </div>
+      </div>
+    `;
+
     bodyHtml += `
       <div class="static-row" style="flex-direction:column; align-items:stretch;">
         <div class="static-row-label" style="width:100%; margin-bottom:8px;">Skills</div>
@@ -863,6 +937,10 @@
 
     // Special fields
     p['Specialization'] = Array.from(document.querySelectorAll('#dp-body .edit-skill-cb:checked')).map(cb => cb.value).join(', ');
+    if (window._tempDpAvatar !== undefined) {
+      if (window._tempDpAvatar === null) delete p.Picture;
+      else p.Picture = window._tempDpAvatar;
+    }
 
     saveFile();
     editingPersonId = null;
@@ -1090,7 +1168,7 @@
       <div class="person-card" data-id="${p['Person ID'] || ''}">
         <div class="health-dot ${hc}" title="Health: ${hc}"></div>
         <div style="display:flex;align-items:flex-start;gap:12px">
-          <div class="person-avatar">${initials}</div>
+          <div class="person-avatar">${p.Picture ? `<img src="${p.Picture}" class="avatar-img">` : initials}</div>
           <div style="flex:1;min-width:0">
             <div class="person-name">${p['Full Name'] || '—'}</div>
             <div class="person-role">${role}</div>
@@ -1118,7 +1196,11 @@
   // ─── DETAIL PANEL ─────────────────────────────────────────────────
   function openDetailPanel(p) {
     const initials = (p['Full Name'] || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-    document.getElementById('dp-avatar').textContent = initials;
+    if (p.Picture) {
+      document.getElementById('dp-avatar').innerHTML = `<img src="${p.Picture}" class="avatar-img">`;
+    } else {
+      document.getElementById('dp-avatar').textContent = initials;
+    }
     document.getElementById('dp-name').textContent = p['Full Name'] || '—';
     document.getElementById('dp-role').textContent = p['Cybersecurity Role'] || p['Current Title'] || '';
 
@@ -1387,6 +1469,10 @@
 
   // ─── ADD CONTACT MODAL ────────────────────────────────────────────
   function openModal() {
+    currentAvatarB64 = null;
+    document.getElementById('f-avatar-preview').style.display = 'none';
+    document.getElementById('btn-modal-avatar-remove').style.display = 'none';
+    document.getElementById('f-avatar-input').value = '';
     // populate skill checkboxes
     const area = document.getElementById('skill-checkboxes');
     area.innerHTML = (db.skills || []).map(s => `
@@ -1463,6 +1549,27 @@
   document.getElementById('btn-load-sidebar').addEventListener('click', loadFile);
   document.getElementById('btn-load-onboard').addEventListener('click', loadFile);
   document.getElementById('btn-add').addEventListener('click', openModal);
+
+  let currentAvatarB64 = null;
+  document.getElementById('f-avatar-input').addEventListener('change', async (e) => {
+    if(!e.target.files.length) return;
+    try {
+      currentAvatarB64 = await processImageUpload(e.target.files[0]);
+      const preview = document.getElementById('f-avatar-preview');
+      preview.src = currentAvatarB64;
+      preview.style.display = 'block';
+      document.getElementById('btn-modal-avatar-remove').style.display = 'inline-block';
+    } catch(err) {
+      console.log(err);
+    }
+  });
+  document.getElementById('btn-modal-avatar-remove').addEventListener('click', () => {
+    currentAvatarB64 = null;
+    document.getElementById('f-avatar-preview').style.display = 'none';
+    document.getElementById('btn-modal-avatar-remove').style.display = 'none';
+    document.getElementById('f-avatar-input').value = '';
+  });
+
   document.getElementById('btn-modal-close').addEventListener('click', closeModal);
   document.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
   document.getElementById('btn-modal-save').addEventListener('click', saveContact);
