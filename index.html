@@ -667,6 +667,10 @@
   let searchQuery = '';
 
   // ─── CRM v3 HELPERS ─────────────────────────────────────────────
+  function formatPills(arr) {
+    return arr && arr.length ? arr.map(a => `<span class="view-pill">${a}</span>`).join('') : '';
+  }
+
   function getArray(p, field) {
     if (!p[field]) return [];
     if (Array.isArray(p[field])) return p[field].filter(Boolean);
@@ -1364,7 +1368,6 @@
       return `<div class="dp-skill-pill" style="border-color:${col}22; color:${col}; background:${col}11;">${s}</div>`;
     }).join(' ');
 
-    const formatPills = (arr) => arr.length ? arr.map(a => `<span class="view-pill">${a}</span>`).join('') : '';
     const formatArray = (arr) => arr.length ? arr.join(', ') : '';
     const formatLines = (arr) => arr.length ? arr.join('<br/>') : '';
 
